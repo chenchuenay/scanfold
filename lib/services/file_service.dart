@@ -343,6 +343,48 @@ abstract final class FileService {
     return output;
   }
 
+  /// Strips permission/restriction flags (no-copy, no-print, no-edit) from a PDF
+  /// that is restricted but NOT content-password-protected. This is legitimate:
+  /// no password means the content isn't encrypted, only restricted from reuse.
+  /// Returns null if the PDF is password-protected (needs the password flow)
+  /// or cannot be opened.
+  static Future<String?> removePdfRestrictions(String inputPath) async {
+    final inputBytes = await File(inputPath).readAsBytes();
+    // Opened WITHOUT a password. If it loads and is restricted, we can add
+    // all permission flags. If it's actually password-protected, this throws
+    // and we return null so the caller routes to the password flow.
+    try {
+      final document = sf.PdfDocument(inputBytes: inputBytes);
+      document.security.permissions.addAll(<sf.PdfPermissionsFlags>[
+        sf.PdfPermissionsFlags.print,
+        sf.PdfPermissionsFlags.editContent,
+        sf.PdfPermissionsFlags.copyContent,
+        sf.PdfPermissionsFlags.editAnnotations,
+        sf.PdfPermissionsFlags.fillFields,
+        sf.PdfPermissionsFlags.accessibilityCopyContent,
+        sf.PdfPermissionsFlags.assembleDocument,
+        sf.PdfPermissionsFlags.fullQualityPrint,
+      ]);
+      final bytes = await document.save();
+      document.dispose();
+      final directory = await _outputDirectory();
+      final output =
+          '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}_free.pdf';
+      await File(output).writeAsBytes(bytes, flush: true);
+      await HistoryService.add(
+        HistoryItem(
+          title: 'Removed PDF restrictions',
+          type: 'pdf',
+          path: output,
+          createdAt: DateTime.now(),
+        ),
+      );
+      return output;
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<PdfCompressionResult?> compressPdf(String inputPath) async {
     final inputBytes = await File(inputPath).readAsBytes();
     final document = sf.PdfDocument(inputBytes: inputBytes);

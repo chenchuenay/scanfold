@@ -733,9 +733,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
         if (_pdfPath != null) ...[
           const SizedBox(height: 12),
           FilledButton.icon(
-            onPressed: _working || _unlockController.text.isEmpty
-                ? null
-                : _unlockPdf,
+            onPressed: _working ? null : _removeRestrictions,
             icon: _working
                 ? const SizedBox(
                     width: 18,
@@ -743,7 +741,27 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.lock_open_outlined),
-            label: Text(_working ? 'Unlocking...' : 'Unlock PDF'),
+            label: Text(
+              _working ? 'Removing restrictions...' : 'Remove restrictions',
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Works when a PDF is restricted without an owner password. If the PDF needs a password, use the field below.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: ScanFoldColors.muted,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _working || _unlockController.text.isEmpty
+                ? null
+                : _unlockPdf,
+            icon: const Icon(Icons.lock_open_outlined),
+            label: const Text('Unlock with password'),
           ),
         ],
         if (_result != null)
@@ -792,6 +810,34 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
       _failure(
         'Could not unlock this PDF. Check the password or that it uses a supported format.',
       );
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  Future<void> _removeRestrictions() async {
+    setState(() => _working = true);
+    try {
+      final path = await FileService.removePdfRestrictions(_pdfPath!);
+      if (mounted) {
+        if (path == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'This PDF needs a password. Enter it in the field and use Unlock with password.',
+              ),
+            ),
+          );
+        } else {
+          setState(() {
+            _result = path;
+            _afterBytes = File(path).lengthSync();
+          });
+          _success('PDF restrictions removed');
+        }
+      }
+    } catch (_) {
+      _failure('Could not remove restrictions from this PDF.');
     } finally {
       if (mounted) setState(() => _working = false);
     }
