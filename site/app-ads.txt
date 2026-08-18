@@ -1,0 +1,11 @@
+# app-ads.txt for ScanFold
+# This file authorizes advertising networks to serve ads for this app.
+# Add an entry below for each ad network you are authorized to use.
+# The app domain must match the developer's verified domain.
+#
+# Placeholder — no ad network is currently active. When your ad account is
+# verified, add authoritative entries here following each network's format.
+#
+# Example (Unity Ads):
+# (replace with real values from your Unity dashboard)
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

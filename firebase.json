@@ -1,20 +1,27 @@
 {
   "hosting": {
-    "public": "build/web",
+    "public": "site",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
     "headers": [
       {
-        "source": "**/*.@(js|css|png|jpg|jpeg|webp|svg|woff|woff2)",
+        "source": "app-ads.txt",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/plain"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public,max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(css|png|jpg|jpeg|webp|svg|woff|woff2)",
         "headers": [
           {
             "key": "Cache-Control",
