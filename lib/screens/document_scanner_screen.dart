@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/watermark_overlay.dart';
 
 class DocumentScannerScreen extends StatefulWidget {
   const DocumentScannerScreen({super.key});
@@ -16,8 +17,15 @@ class DocumentScannerScreen extends StatefulWidget {
 
 class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
   final _picker = ImagePicker();
+  final _passwordController = TextEditingController();
   final List<String> _pages = [];
   bool _working = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +82,20 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
           ),
           if (_pages.isNotEmpty) ...[
             const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password (optional)',
+                    hintText: 'Protect the PDF with a password',
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             const Text(
               'Pages (tap to recrop)',
               style: TextStyle(fontWeight: FontWeight.w700),
@@ -85,11 +107,16 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
                 child: ListTile(
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(entry.value),
+                    child: SizedBox(
                       width: 56,
                       height: 56,
-                      fit: BoxFit.cover,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.file(File(entry.value), fit: BoxFit.cover),
+                          const WatermarkOverlay(),
+                        ],
+                      ),
                     ),
                   ),
                   title: Text(
@@ -214,7 +241,12 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
   Future<void> _createPdf() async {
     setState(() => _working = true);
     try {
-      final path = await FileService.imagesToPdf(List.of(_pages));
+      final path = await FileService.imagesToPdf(
+        List.of(_pages),
+        password: _passwordController.text.trim().isEmpty
+            ? null
+            : _passwordController.text.trim(),
+      );
       if (mounted) {
         setState(() => _result = path);
         ScaffoldMessenger.of(context).showSnackBar(

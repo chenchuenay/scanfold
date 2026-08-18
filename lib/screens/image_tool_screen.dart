@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/watermark_overlay.dart';
 
 enum _PhotoMode { compress, resize, passport, batch }
 
@@ -140,6 +141,23 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           style: const TextStyle(color: ScanFoldColors.secondary, height: 1.4),
         ),
         const SizedBox(height: 18),
+        if (_mode == _PhotoMode.compress || _mode == _PhotoMode.passport)
+          _sizeControls()
+        else if (_mode == _PhotoMode.resize)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _widthController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Width in pixels',
+                  hintText: 'Example: 1200',
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(height: 12),
         if (!hasSource)
           Card(
             child: Padding(
@@ -183,24 +201,14 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
         else ...[
           ClipRRect(
             borderRadius: BorderRadius.circular(18),
-            child: Image.file(
-              File(_source!.path),
-              height: 240,
-              fit: BoxFit.cover,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(File(_source!.path), height: 240, fit: BoxFit.cover),
+                const WatermarkOverlay(),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          if (_mode == _PhotoMode.compress || _mode == _PhotoMode.passport)
-            _sizeControls()
-          else if (_mode == _PhotoMode.resize)
-            TextField(
-              controller: _widthController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Width in pixels',
-                hintText: 'Example: 1200',
-              ),
-            ),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: _working ? null : _prepare,

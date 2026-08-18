@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 
+import 'package:archive/archive.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -81,7 +82,10 @@ abstract final class FileService {
     return results;
   }
 
-  static Future<String> imagesToPdf(List<String> paths) async {
+  static Future<String> imagesToPdf(
+    List<String> paths, {
+    String? password,
+  }) async {
     final document = pw.Document();
     for (final path in paths) {
       final bytes = await File(path).readAsBytes();
@@ -97,11 +101,47 @@ abstract final class FileService {
     final directory = await _outputDirectory();
     final output =
         '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    await File(output).writeAsBytes(await document.save(), flush: true);
+    final bytes = await document.save();
+    if (password != null && password.isNotEmpty) {
+      final secured = sf.PdfDocument(inputBytes: bytes);
+      secured.security.algorithm = sf.PdfEncryptionAlgorithm.aesx128Bit;
+      secured.security.userPassword = password;
+      secured.security.ownerPassword = password;
+      final securedBytes = await secured.save();
+      secured.dispose();
+      await File(output).writeAsBytes(securedBytes, flush: true);
+    } else {
+      await File(output).writeAsBytes(bytes, flush: true);
+    }
     await HistoryService.add(
       HistoryItem(
         title: 'Created PDF',
         type: 'pdf',
+        path: output,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return output;
+  }
+
+  static Future<String> createZip(List<String> paths) async {
+    final archive = Archive();
+    for (final path in paths) {
+      final file = File(path);
+      if (!file.existsSync()) continue;
+      archive.add(
+        ArchiveFile.bytes(file.uri.pathSegments.last, await file.readAsBytes()),
+      );
+    }
+    final encoded = ZipEncoder().encode(archive);
+    final directory = await _outputDirectory();
+    final output =
+        '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}.zip';
+    await File(output).writeAsBytes(encoded, flush: true);
+    await HistoryService.add(
+      HistoryItem(
+        title: 'Created ZIP',
+        type: 'zip',
         path: output,
         createdAt: DateTime.now(),
       ),

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/tool_card.dart';
+import 'about_screen.dart';
 import 'image_tool_screen.dart';
 import 'my_files_screen.dart';
 import 'pdf_tool_screen.dart';
 import 'qr_screen.dart';
+import 'zip_tool_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -93,6 +95,16 @@ class HomeScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const MyFilesScreen()),
                   ),
                 ),
+                ToolCard(
+                  icon: Icons.archive_outlined,
+                  title: 'Zip Files',
+                  subtitle: 'Pack photos, PDFs, and documents into one file.',
+                  color: ScanFoldColors.mint,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ZipToolScreen()),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 28),
@@ -118,10 +130,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Center(
-              child: Text(
-                'Built by Enay Works',
-                style: TextStyle(color: ScanFoldColors.muted, fontSize: 12),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AboutScreen()),
+                ),
+                icon: const Icon(Icons.info_outline, size: 16),
+                label: const Text('About ScanFold'),
               ),
             ),
           ],

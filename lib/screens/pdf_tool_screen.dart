@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/watermark_overlay.dart';
 import 'document_scanner_screen.dart';
 
 enum _PdfMode { create, compress, merge }
@@ -22,6 +23,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
   _PdfMode? _mode;
   List<XFile> _images = const [];
   List<String> _mergePaths = const [];
+  final _passwordController = TextEditingController();
   String? _pdfPath;
   String? _result;
   int? _beforeBytes;
@@ -143,6 +145,20 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
         const SizedBox(height: 18),
         Card(
           child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password (optional)',
+                hintText: 'Protect the PDF with a password',
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
@@ -178,10 +194,16 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (_, index) => ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(_images[index].path),
+                child: SizedBox(
                   width: 110,
-                  fit: BoxFit.cover,
+                  height: 110,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(File(_images[index].path), fit: BoxFit.cover),
+                      const WatermarkOverlay(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -317,6 +339,9 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     try {
       final path = await FileService.imagesToPdf(
         _images.map((image) => image.path).toList(),
+        password: _passwordController.text.trim().isEmpty
+            ? null
+            : _passwordController.text.trim(),
       );
       if (mounted) {
         setState(() {
@@ -498,6 +523,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
   }
 
   void _reset() {
+    _passwordController.clear();
     setState(() {
       _mode = null;
       _images = const [];
