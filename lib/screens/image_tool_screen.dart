@@ -8,6 +8,7 @@ import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aspect_preset_picker.dart';
 import '../widgets/watermark_overlay.dart';
+import 'make_it_fit_screen.dart';
 
 enum _PhotoMode { compress, resize, passport, batch }
 
@@ -77,6 +78,59 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
         ),
         const SizedBox(height: 22),
+        Card(
+          color: ScanFoldColors.mint.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: ScanFoldColors.mint),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MakeItFitScreen()),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    color: ScanFoldColors.mint,
+                    size: 30,
+                  ),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Make it Fit',
+                          style: TextStyle(
+                            color: ScanFoldColors.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'One photo, right size & shape for WhatsApp, Instagram, email, passport and more.',
+                          style: TextStyle(
+                            color: ScanFoldColors.secondary,
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: ScanFoldColors.mint),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         _featureTile(
           icon: Icons.compress,
           title: 'Compress to a size',

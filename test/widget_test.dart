@@ -11,11 +11,14 @@ void main() {
     expect(find.text('Photo Tools'), findsOneWidget);
     expect(find.text('PDF Tools'), findsOneWidget);
     expect(find.text('My Files'), findsOneWidget);
-    expect(find.text('Make it Fit'), findsOneWidget);
   });
 
-  testWidgets('Make it Fit shows share targets', (tester) async {
+  testWidgets('Make it Fit is available from Photo Tools', (tester) async {
     await tester.pumpWidget(const ScanFoldApp());
+    await tester.tap(find.text('Photo Tools'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Make it Fit'), findsOneWidget);
     await tester.tap(find.text('Make it Fit'));
     await tester.pumpAndSettle();
 
