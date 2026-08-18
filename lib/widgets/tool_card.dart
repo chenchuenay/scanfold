@@ -28,6 +28,7 @@ class ToolCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -39,9 +40,11 @@ class ToolCard extends StatelessWidget {
                   child: Icon(icon, color: color, size: 24),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 14),
               Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: ScanFoldColors.text,
                   fontSize: 16,
@@ -51,7 +54,7 @@ class ToolCard extends StatelessWidget {
               const SizedBox(height: 5),
               Text(
                 subtitle,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: ScanFoldColors.secondary,

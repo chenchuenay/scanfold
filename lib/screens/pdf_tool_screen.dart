@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+
+enum _PdfMode { create, compress }
 
 class PdfToolScreen extends StatefulWidget {
   const PdfToolScreen({super.key});
@@ -15,127 +18,345 @@ class PdfToolScreen extends StatefulWidget {
 
 class _PdfToolScreenState extends State<PdfToolScreen> {
   final _picker = ImagePicker();
+  _PdfMode? _mode;
   List<XFile> _images = const [];
+  String? _pdfPath;
   String? _result;
+  int? _beforeBytes;
+  int? _afterBytes;
   bool _working = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('PDF Maker')),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.picture_as_pdf_outlined,
-                    color: ScanFoldColors.mint,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    _images.isEmpty
-                        ? 'Turn photos into a clean PDF on your device.'
-                        : '${_images.length} photo${_images.length == 1 ? '' : 's'} selected',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: ScanFoldColors.secondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  FilledButton.icon(
-                    onPressed: _working ? null : _pick,
-                    icon: const Icon(Icons.collections_outlined),
-                    label: const Text('Choose photos'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_images.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 110,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _images.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
-                itemBuilder: (_, index) => ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(_images[index].path),
-                    width: 110,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _working ? null : _create,
-              icon: _working
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome_motion_outlined),
-              label: Text(_working ? 'Creating...' : 'Create PDF'),
-            ),
-          ],
-          if (_result != null) ...[
-            const SizedBox(height: 18),
-            Card(
-              child: ListTile(
-                leading: const Icon(
-                  Icons.check_circle_outline,
-                  color: ScanFoldColors.mint,
-                ),
-                title: const Text('PDF ready'),
-                subtitle: const Text('Created locally and ready to share.'),
-                trailing: IconButton(
-                  tooltip: 'Share',
-                  onPressed: () => FileService.share(_result!),
-                  icon: const Icon(Icons.ios_share),
-                ),
-              ),
-            ),
-          ],
-        ],
+      appBar: AppBar(
+        title: Text(_mode == null ? 'PDF Tools' : _modeTitle),
+        leading: _mode != null
+            ? IconButton(
+                tooltip: 'Back to PDF tools',
+                onPressed: _reset,
+                icon: const Icon(Icons.arrow_back),
+              )
+            : null,
+      ),
+      body: _mode == null
+          ? _hub()
+          : (_mode == _PdfMode.create ? _create() : _compress()),
+    );
+  }
+
+  String get _modeTitle =>
+      _mode == _PdfMode.create ? 'Create PDF' : 'Compress PDF';
+
+  Widget _hub() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'What do you want to do?',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Prepare PDFs locally, with a visible result size before you share.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 22),
+        _option(
+          icon: Icons.collections_outlined,
+          title: 'Create PDF from photos',
+          subtitle: 'Select one or more photos and arrange them into a PDF.',
+          color: ScanFoldColors.mint,
+          onTap: () => setState(() => _mode = _PdfMode.create),
+        ),
+        _option(
+          icon: Icons.compress,
+          title: 'Compress a PDF',
+          subtitle: 'Reduce an existing PDF for email, forms, or messaging.',
+          color: ScanFoldColors.amber,
+          onTap: () => setState(() => _mode = _PdfMode.compress),
+        ),
+      ],
+    );
+  }
+
+  Widget _option({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.14),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle, style: const TextStyle(height: 1.3)),
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }
 
-  Future<void> _pick() async {
+  Widget _create() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Choose photos when you are ready. They are used only to build the local PDF.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _images.isEmpty
+                      ? 'No photos selected'
+                      : '${_images.length} photo${_images.length == 1 ? '' : 's'} selected',
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: _working ? null : _pickImages,
+                  icon: const Icon(Icons.collections_outlined),
+                  label: const Text('Choose photos'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_images.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 110,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _images.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (_, index) => ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(
+                  File(_images[index].path),
+                  width: 110,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _working ? null : _createPdf,
+            icon: _working
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check_circle_outline),
+            label: Text(_working ? 'Creating locally...' : 'Create PDF'),
+          ),
+        ],
+        if (_result != null) _resultCard('PDF ready', _result!, _afterBytes),
+      ],
+    );
+  }
+
+  Widget _compress() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Choose an existing PDF. ScanFold compresses it locally and shows the output size before sharing.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.compress,
+                  color: ScanFoldColors.amber,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _pdfPath == null
+                      ? 'No PDF selected'
+                      : 'Selected PDF: ${_formatBytes(_beforeBytes ?? 0)}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _working ? null : _pickPdf,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Choose PDF'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_pdfPath != null) ...[
+          const SizedBox(height: 14),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'High quality is used by default. Compression will not intentionally reduce the document below the safe quality preset.',
+                style: TextStyle(color: ScanFoldColors.secondary, height: 1.35),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: _working ? null : _compressPdf,
+            icon: _working
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.compress),
+            label: Text(_working ? 'Compressing locally...' : 'Compress PDF'),
+          ),
+        ],
+        if (_result != null)
+          _resultCard('Compressed PDF ready', _result!, _afterBytes),
+      ],
+    );
+  }
+
+  Widget _resultCard(String title, String path, int? bytes) {
+    return Card(
+      margin: const EdgeInsets.only(top: 18),
+      child: ListTile(
+        leading: const Icon(
+          Icons.check_circle_outline,
+          color: ScanFoldColors.mint,
+        ),
+        title: Text(title),
+        subtitle: Text(
+          bytes == null ? 'Created locally.' : 'Output: ${_formatBytes(bytes)}',
+        ),
+        trailing: IconButton(
+          tooltip: 'Share',
+          onPressed: () => FileService.share(path),
+          icon: const Icon(Icons.ios_share),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImages() async {
     final images = await _picker.pickMultiImage(imageQuality: 100);
     if (mounted && images.isNotEmpty) setState(() => _images = images);
   }
 
-  Future<void> _create() async {
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    final path = result?.path;
+    if (path != null && mounted) {
+      setState(() {
+        _pdfPath = path;
+        _beforeBytes = File(path).lengthSync();
+        _result = null;
+      });
+    }
+  }
+
+  Future<void> _createPdf() async {
     setState(() => _working = true);
     try {
       final path = await FileService.imagesToPdf(
         _images.map((image) => image.path).toList(),
       );
       if (mounted) {
-        setState(() => _result = path);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('PDF created locally')));
+        setState(() {
+          _result = path;
+          _afterBytes = File(path).lengthSync();
+        });
+        _success('PDF created locally');
       }
     } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not create the PDF.')),
-        );
-      }
+      _failure('Could not create the PDF.');
     } finally {
       if (mounted) setState(() => _working = false);
     }
+  }
+
+  Future<void> _compressPdf() async {
+    setState(() => _working = true);
+    try {
+      final result = await FileService.compressPdf(_pdfPath!);
+      if (mounted) {
+        if (result == null) {
+          _failure(
+            'This PDF is already compact; no smaller version was possible.',
+          );
+        } else {
+          setState(() {
+            _result = result.path;
+            _afterBytes = result.afterBytes;
+          });
+          _success('PDF compressed locally');
+        }
+      }
+    } catch (_) {
+      _failure('Could not compress this PDF.');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
+  void _success(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _failure(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  void _reset() {
+    setState(() {
+      _mode = null;
+      _images = const [];
+      _pdfPath = null;
+      _result = null;
+      _beforeBytes = null;
+      _afterBytes = null;
+    });
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 }

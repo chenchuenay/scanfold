@@ -51,7 +51,7 @@ class HomeScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.05,
+              childAspectRatio: 0.9,
               children: [
                 ToolCard(
                   icon: Icons.qr_code_scanner_rounded,
