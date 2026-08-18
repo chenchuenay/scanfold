@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ScanFold uses the camera to scan QR codes and documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ScanFold uses selected photos to compress, resize, and create PDFs.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
