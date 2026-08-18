@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../services/make_it_fit_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/tool_help_icon.dart';
 import '../widgets/watermark_overlay.dart';
 
 class MakeItFitScreen extends StatefulWidget {
@@ -36,6 +37,7 @@ class _MakeItFitScreenState extends State<MakeItFitScreen> {
                 }),
               )
             : null,
+        actions: [ToolHelpIcon(guide: ToolGuides.makeItFit)],
       ),
       body: _source == null ? _pickCard() : _workflow(),
     );

@@ -116,7 +116,7 @@ class AboutScreen extends StatelessWidget {
           const SizedBox(height: 20),
           const Center(
             child: Text(
-              'Built with care by Enay Kumar',
+              '© 2026 Enay Kumar. All rights reserved.',
               style: TextStyle(color: ScanFoldColors.muted, fontSize: 12),
             ),
           ),

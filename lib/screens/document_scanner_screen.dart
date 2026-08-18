@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/password_protect_field.dart';
+import '../widgets/tool_help_icon.dart';
 import '../widgets/watermark_overlay.dart';
 
 class DocumentScannerScreen extends StatefulWidget {
@@ -31,7 +32,10 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan Document')),
+      appBar: AppBar(
+        title: const Text('Scan Document'),
+        actions: [ToolHelpIcon(guide: ToolGuides.pdf)],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [

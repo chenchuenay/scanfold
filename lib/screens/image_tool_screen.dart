@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/aspect_preset_picker.dart';
+import '../widgets/tool_help_icon.dart';
 import '../widgets/watermark_overlay.dart';
 import 'make_it_fit_screen.dart';
 
@@ -52,6 +53,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
                 icon: const Icon(Icons.arrow_back),
               )
             : null,
+        actions: [ToolHelpIcon(guide: ToolGuides.photo)],
       ),
       body: _mode == null ? _featureHub() : _workflow(),
     );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/file_service.dart';
 import '../services/history_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/tool_help_icon.dart';
 
 class MyFilesScreen extends StatefulWidget {
   const MyFilesScreen({super.key});
@@ -33,6 +34,7 @@ class _MyFilesScreenState extends State<MyFilesScreen> {
       appBar: AppBar(
         title: const Text('History'),
         actions: [
+          ToolHelpIcon(guide: ToolGuides.history),
           if (_items?.isNotEmpty ?? false)
             IconButton(
               tooltip: 'Clear history',

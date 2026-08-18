@@ -22,9 +22,12 @@ class HomeScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            tooltip: 'Privacy',
-            onPressed: () => _showPrivacy(context),
-            icon: const Icon(Icons.verified_user_outlined),
+            tooltip: 'About',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
+            icon: const Icon(Icons.info_outline),
           ),
         ],
       ),
@@ -33,79 +36,106 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 10, 18, 28),
           children: [
             const Text(
-              'Scan. Prepare. Share.',
+              'ScanFold',
               style: TextStyle(
                 color: ScanFoldColors.text,
-                fontSize: 30,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -1,
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1.2,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             const Text(
-              'Private file tools that work on your device.',
-              style: TextStyle(color: ScanFoldColors.secondary, fontSize: 15),
+              'Scan. Prepare. Share.',
+              style: TextStyle(
+                color: ScanFoldColors.secondary,
+                fontSize: 16,
+                letterSpacing: 0.3,
+              ),
             ),
-            const SizedBox(height: 20),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.82,
-              children: [
-                ToolCard(
-                  icon: Icons.qr_code_scanner_rounded,
-                  title: 'QR & Barcode',
-                  subtitle: 'Scan safely without auto-opening links.',
-                  color: ScanFoldColors.mint,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QrScreen()),
+            const SizedBox(height: 24),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final columns = width >= 720
+                    ? 4
+                    : width >= 480
+                    ? 3
+                    : 2;
+                final extent = width >= 720 ? 210.0 : 190.0;
+                return GridView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: extent,
                   ),
-                ),
-                ToolCard(
-                  icon: Icons.photo_size_select_large_outlined,
-                  title: 'Photo Tools',
-                  subtitle: 'Compress, resize, and prepare photos.',
-                  color: ScanFoldColors.amber,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ImageToolScreen()),
-                  ),
-                ),
-                ToolCard(
-                  icon: Icons.picture_as_pdf_outlined,
-                  title: 'PDF Tools',
-                  subtitle: 'Scan documents, create, compress, and merge PDFs.',
-                  color: ScanFoldColors.mint,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PdfToolScreen()),
-                  ),
-                ),
-                ToolCard(
-                  icon: Icons.archive_outlined,
-                  title: 'Zip Tools',
-                  subtitle: 'Pack photos, PDFs, and documents into one file.',
-                  color: ScanFoldColors.amber,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ZipToolScreen()),
-                  ),
-                ),
-                ToolCard(
-                  icon: Icons.history,
-                  title: 'History',
-                  subtitle: 'Your recent results stay on this device.',
-                  color: ScanFoldColors.mint,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MyFilesScreen()),
-                  ),
-                ),
-              ],
+                  children: [
+                    ToolCard(
+                      icon: Icons.qr_code_scanner_rounded,
+                      title: 'QR & Barcode',
+                      subtitle: 'Scan safely without auto-opening links.',
+                      color: ScanFoldColors.mint,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const QrScreen()),
+                      ),
+                    ),
+                    ToolCard(
+                      icon: Icons.photo_size_select_large_outlined,
+                      title: 'Photo Tools',
+                      subtitle: 'Compress, resize, and prepare photos.',
+                      color: ScanFoldColors.amber,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ImageToolScreen(),
+                        ),
+                      ),
+                    ),
+                    ToolCard(
+                      icon: Icons.picture_as_pdf_outlined,
+                      title: 'PDF Tools',
+                      subtitle:
+                          'Scan documents, create, compress, and merge PDFs.',
+                      color: ScanFoldColors.mint,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PdfToolScreen(),
+                        ),
+                      ),
+                    ),
+                    ToolCard(
+                      icon: Icons.archive_outlined,
+                      title: 'Zip Tools',
+                      subtitle:
+                          'Pack photos, PDFs, and documents into one file.',
+                      color: ScanFoldColors.amber,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ZipToolScreen(),
+                        ),
+                      ),
+                    ),
+                    ToolCard(
+                      icon: Icons.history,
+                      title: 'History',
+                      subtitle: 'Your recent results stay on this device.',
+                      color: ScanFoldColors.mint,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyFilesScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 28),
             Card(
@@ -143,15 +173,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  void _showPrivacy(BuildContext context) {
-    showAboutDialog(
-      context: context,
-      applicationName: 'ScanFold',
-      applicationVersion: '1.0.0',
-      applicationLegalese: 'Core file processing happens on this device.',
     );
   }
 }

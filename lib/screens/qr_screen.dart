@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/tool_help_icon.dart';
 
 enum _QrMode { scan, create }
 
@@ -47,6 +48,7 @@ class _QrScreenState extends State<QrScreen> {
                 icon: const Icon(Icons.arrow_back),
               )
             : null,
+        actions: [ToolHelpIcon(guide: ToolGuides.qr)],
       ),
       body: _mode == null
           ? _hub()

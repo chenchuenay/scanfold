@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/password_protect_field.dart';
+import '../widgets/tool_help_icon.dart';
 
 enum _ZipMode { create, unlock }
 
@@ -42,6 +43,7 @@ class _ZipToolScreenState extends State<ZipToolScreen> {
                 icon: const Icon(Icons.arrow_back),
               )
             : null,
+        actions: [ToolHelpIcon(guide: ToolGuides.zip)],
       ),
       body: _mode == null
           ? _hub()
