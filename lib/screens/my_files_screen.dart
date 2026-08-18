@@ -31,7 +31,7 @@ class _MyFilesScreenState extends State<MyFilesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Files'),
+        title: const Text('History'),
         actions: [
           if (_items?.isNotEmpty ?? false)
             IconButton(

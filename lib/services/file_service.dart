@@ -249,7 +249,10 @@ abstract final class FileService {
     return results;
   }
 
-  static Future<String> createZip(List<String> paths) async {
+  static Future<String> createZip(
+    List<String> paths, {
+    String? password,
+  }) async {
     final archive = Archive();
     for (final path in paths) {
       final file = File(path);
@@ -258,7 +261,7 @@ abstract final class FileService {
         ArchiveFile.bytes(file.uri.pathSegments.last, await file.readAsBytes()),
       );
     }
-    final encoded = ZipEncoder().encode(archive);
+    final encoded = ZipEncoder(password: password).encode(archive);
     final directory = await _outputDirectory();
     final output =
         '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}.zip';
@@ -267,6 +270,72 @@ abstract final class FileService {
       HistoryItem(
         title: 'Created ZIP',
         type: 'zip',
+        path: output,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return output;
+  }
+
+  /// Removes (or re-adds) a password on an existing ZIP. To remove, pass the
+  /// [password] already on the file. Empties out the password if [password] is null.
+  /// Returns null if the file could not be decoded (e.g. wrong password).
+  static Future<String?> repackZip({
+    required String inputPath,
+    String? password,
+    String? newPassword,
+  }) async {
+    final inputBytes = await File(inputPath).readAsBytes();
+    Archive? archive;
+    if (password != null && password.isNotEmpty) {
+      try {
+        archive = ZipDecoder().decodeBytes(inputBytes, password: password);
+      } catch (_) {
+        archive = null;
+      }
+    } else {
+      try {
+        archive = ZipDecoder().decodeBytes(inputBytes);
+      } catch (_) {
+        archive = null;
+      }
+    }
+    if (archive == null) return null;
+
+    final encoded = ZipEncoder(password: newPassword).encode(archive);
+    final directory = await _outputDirectory();
+    final output =
+        '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}.zip';
+    await File(output).writeAsBytes(encoded, flush: true);
+    await HistoryService.add(
+      HistoryItem(
+        title: newPassword == null ? 'Unlocked ZIP' : 'Protected ZIP',
+        type: 'zip',
+        path: output,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return output;
+  }
+
+  /// Removes a password from an existing PDF. Returns null if it cannot open
+  /// the protected file (wrong password, or an unsupported encryption).
+  static Future<String?> unlockPdf({
+    required String inputPath,
+    required String password,
+  }) async {
+    final inputBytes = await File(inputPath).readAsBytes();
+    final document = sf.PdfDocument(inputBytes: inputBytes, password: password);
+    final bytes = await document.save();
+    document.dispose();
+    final directory = await _outputDirectory();
+    final output =
+        '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}_unlocked.pdf';
+    await File(output).writeAsBytes(bytes, flush: true);
+    await HistoryService.add(
+      HistoryItem(
+        title: 'Unlocked PDF',
+        type: 'pdf',
         path: output,
         createdAt: DateTime.now(),
       ),

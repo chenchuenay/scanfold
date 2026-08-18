@@ -6,10 +6,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/password_protect_field.dart';
 import '../widgets/watermark_overlay.dart';
 import 'document_scanner_screen.dart';
 
-enum _PdfMode { create, compress, merge, split }
+enum _PdfMode { create, compress, merge, split, unlock }
 
 class PdfToolScreen extends StatefulWidget {
   const PdfToolScreen({super.key});
@@ -24,6 +25,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
   List<XFile> _images = const [];
   List<String> _mergePaths = const [];
   final _passwordController = TextEditingController();
+  final _unlockController = TextEditingController();
   String? _pdfPath;
   String? _result;
   int? _beforeBytes;
@@ -50,6 +52,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
               _PdfMode.compress => _compress(),
               _PdfMode.merge => _merge(),
               _PdfMode.split => _split(),
+              _PdfMode.unlock => _unlock(),
             },
     );
   }
@@ -59,6 +62,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     _PdfMode.compress => 'Compress PDF',
     _PdfMode.merge => 'Merge PDFs',
     _PdfMode.split => 'Split a PDF',
+    _PdfMode.unlock => 'Unlock PDF',
   };
 
   Widget _hub() {
@@ -113,6 +117,13 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
           color: ScanFoldColors.amber,
           onTap: () => setState(() => _mode = _PdfMode.split),
         ),
+        _option(
+          icon: Icons.lock_open_outlined,
+          title: 'Unlock PDF',
+          subtitle: 'Remove a password from a protected PDF.',
+          color: ScanFoldColors.mint,
+          onTap: () => setState(() => _mode = _PdfMode.unlock),
+        ),
       ],
     );
   }
@@ -155,14 +166,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password (optional)',
-                hintText: 'Protect the PDF with a password',
-              ),
-            ),
+            child: PasswordProtectField(controller: _passwordController),
           ),
         ),
         const SizedBox(height: 12),
@@ -651,6 +655,148 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     }
   }
 
+  Widget _unlock() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Card(
+          margin: EdgeInsets.only(bottom: 4),
+          color: ScanFoldColors.amber,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: Color(0xFF07090D), size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'For educational and personal use only — do not misuse this tool to access files you do not own. '
+                    'Some PDFs use strong or unsupported encryption, so not every file can be unlocked.',
+                    style: TextStyle(
+                      color: Color(0xFF07090D),
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _unlockController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                hintText: 'Enter the PDF password',
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.lock_open_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _pdfPath == null
+                      ? 'No PDF selected'
+                      : 'Selected: ${_pdfPath!.split('/').last}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _working ? null : _pickUnlockPdf,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Choose PDF'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_pdfPath != null) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _working || _unlockController.text.isEmpty
+                ? null
+                : _unlockPdf,
+            icon: _working
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.lock_open_outlined),
+            label: Text(_working ? 'Unlocking...' : 'Unlock PDF'),
+          ),
+        ],
+        if (_result != null)
+          _resultCard('Unlocked PDF ready', _result!, _afterBytes),
+      ],
+    );
+  }
+
+  Future<void> _pickUnlockPdf() async {
+    final result = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    final path = result?.path;
+    if (path != null && mounted) {
+      setState(() {
+        _pdfPath = path;
+        _beforeBytes = File(path).lengthSync();
+        _result = null;
+        _afterBytes = null;
+      });
+    }
+  }
+
+  Future<void> _unlockPdf() async {
+    setState(() => _working = true);
+    try {
+      final path = await FileService.unlockPdf(
+        inputPath: _pdfPath!,
+        password: _unlockController.text.trim(),
+      );
+      if (mounted) {
+        if (path == null) {
+          _failure(
+            'Could not unlock this PDF. Check the password or that it uses a supported format.',
+          );
+        } else {
+          setState(() {
+            _result = path;
+            _afterBytes = File(path).lengthSync();
+          });
+          _success('PDF unlocked locally');
+        }
+      }
+    } catch (_) {
+      _failure(
+        'Could not unlock this PDF. Check the password or that it uses a supported format.',
+      );
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   void _success(String message) {
     ScaffoldMessenger.of(
       context,
@@ -667,6 +813,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
 
   void _reset() {
     _passwordController.clear();
+    _unlockController.clear();
     setState(() {
       _mode = null;
       _images = const [];

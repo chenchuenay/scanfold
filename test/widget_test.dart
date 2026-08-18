@@ -10,7 +10,7 @@ void main() {
     expect(find.text('QR & Barcode'), findsOneWidget);
     expect(find.text('Photo Tools'), findsOneWidget);
     expect(find.text('PDF Tools'), findsOneWidget);
-    expect(find.text('My Files'), findsOneWidget);
+    expect(find.text('History'), findsOneWidget);
   });
 
   testWidgets('Make it Fit is available from Photo Tools', (tester) async {
@@ -121,15 +121,45 @@ void main() {
     expect(find.text('2×2 inch'), findsOneWidget);
   });
 
-  testWidgets('Home screen shows Zip Files tile', (tester) async {
+  testWidgets('Home screen shows Zip Tools tile', (tester) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.scrollUntilVisible(
-      find.text('Zip Files'),
+      find.text('Zip Tools'),
       120,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    expect(find.text('Zip Files'), findsOneWidget);
+    expect(find.text('Zip Tools'), findsOneWidget);
+  });
+
+  testWidgets('Password field appears only after enabling protect toggle', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.scrollUntilVisible(
+      find.text('PDF Tools'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('PDF Tools'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Create PDF from photos'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create PDF from photos'));
+    await tester.pumpAndSettle();
+
+    // Toggle label visible, password field hidden until enabled.
+    expect(find.text('Protect with password'), findsOneWidget);
+    expect(find.text('Password'), findsNothing);
+
+    await tester.tap(find.text('Protect with password'));
+    await tester.pumpAndSettle();
+    expect(find.text('Password'), findsWidgets);
   });
 
   testWidgets('Photo compress shows size preferences before uploading', (
@@ -146,27 +176,18 @@ void main() {
     expect(find.text('1 MB'), findsOneWidget);
   });
 
-  testWidgets('Document scanner shows password before capturing', (
-    tester,
-  ) async {
+  testWidgets('Zip Tools offers Create and Unlock', (tester) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.scrollUntilVisible(
-      find.text('PDF Tools'),
+      find.text('Zip Tools'),
       120,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('PDF Tools'));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Scan a document'),
-      120,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Scan a document'));
+    await tester.tap(find.text('Zip Tools'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Password (optional)'), findsOneWidget);
+    expect(find.text('Create ZIP'), findsOneWidget);
+    expect(find.text('Unlock ZIP'), findsOneWidget);
   });
 }

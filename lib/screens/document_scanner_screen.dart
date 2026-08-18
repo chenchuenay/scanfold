@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/password_protect_field.dart';
 import '../widgets/watermark_overlay.dart';
 
 class DocumentScannerScreen extends StatefulWidget {
@@ -39,20 +40,6 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
             style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
           ),
           const SizedBox(height: 18),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password (optional)',
-                  hintText: 'Protect the PDF with a password',
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -95,6 +82,13 @@ class _DocumentScannerScreenState extends State<DocumentScannerScreen> {
             ),
           ),
           if (_pages.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: PasswordProtectField(controller: _passwordController),
+              ),
+            ),
             const SizedBox(height: 10),
             const Text(
               'Pages (tap to recrop)',
