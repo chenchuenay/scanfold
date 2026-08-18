@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/tool_card.dart';
 import 'about_screen.dart';
 import 'image_tool_screen.dart';
+import 'make_it_fit_screen.dart';
 import 'my_files_screen.dart';
 import 'pdf_tool_screen.dart';
 import 'qr_screen.dart';
@@ -46,7 +47,60 @@ class HomeScreen extends StatelessWidget {
               'Private file tools that work on your device.',
               style: TextStyle(color: ScanFoldColors.secondary, fontSize: 15),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+            Card(
+              color: ScanFoldColors.mint.withValues(alpha: 0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: ScanFoldColors.mint),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MakeItFitScreen()),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        color: ScanFoldColors.mint,
+                        size: 34,
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Make it Fit',
+                              style: TextStyle(
+                                color: ScanFoldColors.text,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'One photo, right size & shape for WhatsApp, Instagram, email, passport and more.',
+                              style: TextStyle(
+                                color: ScanFoldColors.secondary,
+                                fontSize: 13,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right, color: ScanFoldColors.mint),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,

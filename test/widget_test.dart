@@ -11,6 +11,19 @@ void main() {
     expect(find.text('Photo Tools'), findsOneWidget);
     expect(find.text('PDF Tools'), findsOneWidget);
     expect(find.text('My Files'), findsOneWidget);
+    expect(find.text('Make it Fit'), findsOneWidget);
+  });
+
+  testWidgets('Make it Fit shows share targets', (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.tap(find.text('Make it Fit'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('WhatsApp Profile'), findsOneWidget);
+    expect(find.text('Instagram Post'), findsOneWidget);
+    expect(find.text('YouTube Thumbnail'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Passport photo'), findsOneWidget);
   });
 
   testWidgets('Photo tools hub lists photo modes', (tester) async {
@@ -65,8 +78,9 @@ void main() {
     expect(find.text('Split a PDF'), findsOneWidget);
   });
 
-  testWidgets('Resize shows aspect presets with references before uploading',
-      (tester) async {
+  testWidgets('Resize shows aspect presets with references before uploading', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.tap(find.text('Photo Tools'));
     await tester.pumpAndSettle();
@@ -84,8 +98,9 @@ void main() {
     expect(find.text('Story · 9:16'), findsOneWidget);
   });
 
-  testWidgets('ID photo shows size presets with references before uploading',
-      (tester) async {
+  testWidgets('ID photo shows size presets with references before uploading', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.tap(find.text('Photo Tools'));
     await tester.pumpAndSettle();
