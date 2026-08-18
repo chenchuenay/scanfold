@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 
-enum _PhotoMode { compress, resize, scan, passport }
+enum _PhotoMode { compress, resize, scan, passport, batch }
 
 class ImageToolScreen extends StatefulWidget {
   const ImageToolScreen({super.key});
@@ -20,6 +20,8 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   final _widthController = TextEditingController();
   _PhotoMode? _mode;
   XFile? _source;
+  List<XFile> _batchSources = const [];
+  List<CompressionResult>? _batchResults;
   CompressionResult? _result;
   int _targetBytes = 500 * 1024;
   bool _working = false;
@@ -52,6 +54,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     _PhotoMode.resize => 'Resize Photo',
     _PhotoMode.scan => 'Scan Document',
     _PhotoMode.passport => 'ID Photo',
+    _PhotoMode.batch => 'Batch Compress',
   };
 
   Widget _featureHub() {
@@ -98,6 +101,13 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           color: ScanFoldColors.amber,
           mode: _PhotoMode.passport,
         ),
+        _featureTile(
+          icon: Icons.photo_library_outlined,
+          title: 'Batch compress',
+          subtitle: 'Shrink several photos to the same size limit in one go.',
+          color: ScanFoldColors.mint,
+          mode: _PhotoMode.batch,
+        ),
       ],
     );
   }
@@ -129,6 +139,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   }
 
   Widget _workflow() {
+    if (_mode == _PhotoMode.batch) return _batchWorkflow();
     final hasSource = _source != null;
     return ListView(
       padding: const EdgeInsets.all(18),
@@ -219,6 +230,150 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     );
   }
 
+  Widget _batchWorkflow() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Select several photos, then choose one size limit. Each output keeps the safe quality floor.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _batchSources.isEmpty
+                      ? 'No photos selected'
+                      : '${_batchSources.length} photo${_batchSources.length == 1 ? '' : 's'} selected',
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _working ? null : _pickBatch,
+                  icon: const Icon(Icons.collections_outlined),
+                  label: const Text('Choose photos'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_batchSources.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _sizeControls(),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: _working ? null : _prepareBatch,
+            icon: _working
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.compress),
+            label: Text(
+              _working ? 'Preparing locally...' : 'Compress all photos',
+            ),
+          ),
+        ],
+        if (_batchResults != null && _batchResults!.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          const Text(
+            'Batch complete',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_batchResults!.length} file${_batchResults!.length == 1 ? '' : 's'} prepared',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Each output is saved to My Files and ready to share.',
+                    style: TextStyle(
+                      color: ScanFoldColors.secondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final result in _batchResults!)
+                    ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(
+                        Icons.check_circle_outline,
+                        color: ScanFoldColors.mint,
+                        size: 20,
+                      ),
+                      title: Text(
+                        _formatBytes(result.bytes),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'Share',
+                        onPressed: () => FileService.share(result.path),
+                        icon: const Icon(Icons.ios_share, size: 20),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _pickBatch() async {
+    final images = await _picker.pickMultiImage();
+    if (mounted && images.isNotEmpty) {
+      setState(() {
+        _batchSources = images;
+        _batchResults = null;
+      });
+    }
+  }
+
+  Future<void> _prepareBatch() async {
+    setState(() => _working = true);
+    try {
+      final results = await FileService.compressImagesBatch(
+        sourcePaths: _batchSources.map((image) => image.path).toList(),
+        targetBytes: _targetBytes,
+      );
+      if (mounted) {
+        setState(() => _batchResults = results);
+        if (results.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not prepare these photos.')),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not prepare these photos.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   Widget _sizeControls() {
     return Card(
       child: Padding(
@@ -294,6 +449,8 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
       'Capture a document with the camera. The image stays on this device.',
     _PhotoMode.passport =>
       'Choose a portrait and prepare a practical 600 px copy for forms.',
+    _PhotoMode.batch =>
+      'Choose several photos, then select one size limit for all of them.',
   };
 
   String get _pickExplanation => switch (_mode!) {
@@ -304,6 +461,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
       'The camera is used only after you choose Scan Document.',
     _PhotoMode.passport =>
       'Choose a clear portrait. ScanFold will create a compact copy.',
+    _PhotoMode.batch => 'Select the photos you want to shrink together.',
   };
 
   IconData get _modeIcon => switch (_mode!) {
@@ -311,6 +469,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     _PhotoMode.resize => Icons.photo_size_select_large_outlined,
     _PhotoMode.scan => Icons.document_scanner_outlined,
     _PhotoMode.passport => Icons.badge_outlined,
+    _PhotoMode.batch => Icons.photo_library_outlined,
   };
 
   Color get _modeColor => switch (_mode!) {
@@ -318,6 +477,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     _PhotoMode.resize => ScanFoldColors.mint,
     _PhotoMode.scan => ScanFoldColors.mint,
     _PhotoMode.passport => ScanFoldColors.amber,
+    _PhotoMode.batch => ScanFoldColors.mint,
   };
 
   Future<void> _pickGallery() async {
@@ -352,6 +512,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           sourcePath: _source!.path,
           targetBytes: 2 * 1024 * 1024,
         ),
+        _PhotoMode.batch => null,
       };
       if (!mounted) return;
       setState(() => _result = result);
@@ -374,6 +535,8 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
       _mode = null;
       _source = null;
       _result = null;
+      _batchSources = const [];
+      _batchResults = null;
       _widthController.clear();
     });
   }

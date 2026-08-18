@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 
-enum _PdfMode { create, compress }
+enum _PdfMode { create, compress, merge }
 
 class PdfToolScreen extends StatefulWidget {
   const PdfToolScreen({super.key});
@@ -20,6 +20,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
   final _picker = ImagePicker();
   _PdfMode? _mode;
   List<XFile> _images = const [];
+  List<String> _mergePaths = const [];
   String? _pdfPath;
   String? _result;
   int? _beforeBytes;
@@ -41,12 +42,19 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
       ),
       body: _mode == null
           ? _hub()
-          : (_mode == _PdfMode.create ? _create() : _compress()),
+          : switch (_mode!) {
+              _PdfMode.create => _create(),
+              _PdfMode.compress => _compress(),
+              _PdfMode.merge => _merge(),
+            },
     );
   }
 
-  String get _modeTitle =>
-      _mode == _PdfMode.create ? 'Create PDF' : 'Compress PDF';
+  String get _modeTitle => switch (_mode!) {
+    _PdfMode.create => 'Create PDF',
+    _PdfMode.compress => 'Compress PDF',
+    _PdfMode.merge => 'Merge PDFs',
+  };
 
   Widget _hub() {
     return ListView(
@@ -75,6 +83,13 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
           subtitle: 'Reduce an existing PDF for email, forms, or messaging.',
           color: ScanFoldColors.amber,
           onTap: () => setState(() => _mode = _PdfMode.compress),
+        ),
+        _option(
+          icon: Icons.merge_type_outlined,
+          title: 'Merge PDFs',
+          subtitle: 'Combine several PDF files into one document.',
+          color: ScanFoldColors.mint,
+          onTap: () => setState(() => _mode = _PdfMode.merge),
         ),
       ],
     );
@@ -330,6 +345,133 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     }
   }
 
+  Widget _merge() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Choose PDFs in the order you want them combined. Files stay on this device.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.merge_type_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _mergePaths.isEmpty
+                      ? 'No PDFs selected'
+                      : '${_mergePaths.length} PDF${_mergePaths.length == 1 ? '' : 's'} selected',
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _working ? null : _pickMergePdfs,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Choose PDFs'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_mergePaths.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Card(
+            child: Column(
+              children: [
+                for (var i = 0; i < _mergePaths.length; i++)
+                  ListTile(
+                    dense: true,
+                    leading: Text(
+                      '${i + 1}',
+                      style: const TextStyle(
+                        color: ScanFoldColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    title: Text(
+                      _mergePaths[i].split('/').last,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: IconButton(
+                      tooltip: 'Remove',
+                      onPressed: () => setState(() {
+                        _mergePaths = List.of(_mergePaths)..removeAt(i);
+                        _result = null;
+                      }),
+                      icon: const Icon(
+                        Icons.close,
+                        color: ScanFoldColors.secondary,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (_mergePaths.length >= 2) ...[
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: _working ? null : _mergePdfs,
+              icon: _working
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.merge_type_outlined),
+              label: Text(_working ? 'Merging locally...' : 'Merge PDFs'),
+            ),
+          ],
+        ],
+        if (_result != null)
+          _resultCard('Merged PDF ready', _result!, _afterBytes),
+      ],
+    );
+  }
+
+  Future<void> _pickMergePdfs() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (mounted && result.isNotEmpty) {
+      setState(() {
+        _mergePaths = result
+            .map((file) => file.path ?? '')
+            .where((path) => path.isNotEmpty)
+            .toList();
+        _result = null;
+      });
+    }
+  }
+
+  Future<void> _mergePdfs() async {
+    setState(() => _working = true);
+    try {
+      final path = await FileService.mergePdfs(_mergePaths);
+      if (mounted) {
+        setState(() {
+          _result = path;
+          _afterBytes = File(path).lengthSync();
+        });
+        _success('PDFs merged locally');
+      }
+    } catch (_) {
+      _failure('Could not merge these PDFs.');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   void _success(String message) {
     ScaffoldMessenger.of(
       context,
@@ -348,6 +490,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     setState(() {
       _mode = null;
       _images = const [];
+      _mergePaths = const [];
       _pdfPath = null;
       _result = null;
       _beforeBytes = null;

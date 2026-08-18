@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../services/history_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/tool_card.dart';
 import 'image_tool_screen.dart';
+import 'my_files_screen.dart';
 import 'pdf_tool_screen.dart';
 import 'qr_screen.dart';
 
@@ -88,7 +88,10 @@ class HomeScreen extends StatelessWidget {
                   title: 'My Files',
                   subtitle: 'Your recent results stay on this device.',
                   color: ScanFoldColors.amber,
-                  onTap: () => _showHistory(context),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyFilesScreen()),
+                  ),
                 ),
               ],
             ),
@@ -135,69 +138,4 @@ class HomeScreen extends StatelessWidget {
       applicationLegalese: 'Core file processing happens on this device.',
     );
   }
-
-  void _showHistory(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: ScanFoldColors.surface,
-      builder: (_) => const _HistorySheet(),
-    );
-  }
-}
-
-class _HistorySheet extends StatelessWidget {
-  const _HistorySheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: HistoryLoader.load(),
-      builder: (context, snapshot) {
-        final items = snapshot.data ?? const <HistoryItem>[];
-        if (!snapshot.hasData) {
-          return const SizedBox(
-            height: 220,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (items.isEmpty) {
-          return const SizedBox(
-            height: 220,
-            child: Center(
-              child: Text(
-                'No files created yet',
-                style: TextStyle(color: ScanFoldColors.secondary),
-              ),
-            ),
-          );
-        }
-        return ListView.builder(
-          shrinkWrap: true,
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return ListTile(
-              leading: Icon(
-                item.type == 'pdf'
-                    ? Icons.picture_as_pdf_outlined
-                    : Icons.image_outlined,
-                color: ScanFoldColors.mint,
-              ),
-              title: Text(item.title),
-              subtitle: Text(
-                item.path,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class HistoryLoader {
-  static Future<List<HistoryItem>> load() => HistoryService.load();
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' show Offset;
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -63,6 +64,23 @@ abstract final class FileService {
     );
   }
 
+  static Future<List<CompressionResult>> compressImagesBatch({
+    required List<String> sourcePaths,
+    required int targetBytes,
+  }) async {
+    final results = <CompressionResult>[];
+    for (final sourcePath in sourcePaths) {
+      try {
+        final result = await compressImageToTarget(
+          sourcePath: sourcePath,
+          targetBytes: targetBytes,
+        );
+        if (result != null) results.add(result);
+      } catch (_) {}
+    }
+    return results;
+  }
+
   static Future<String> imagesToPdf(List<String> paths) async {
     final document = pw.Document();
     for (final path in paths) {
@@ -114,6 +132,34 @@ abstract final class FileService {
       beforeBytes: inputBytes.length,
       afterBytes: bytes.length,
     );
+  }
+
+  static Future<String> mergePdfs(List<String> paths) async {
+    final output = sf.PdfDocument();
+    for (final path in paths) {
+      final input = sf.PdfDocument(inputBytes: await File(path).readAsBytes());
+      for (var i = 0; i < input.pages.count; i++) {
+        final template = input.pages[i].createTemplate();
+        final page = output.pages.add();
+        page.graphics.drawPdfTemplate(template, const Offset(0, 0));
+      }
+      input.dispose();
+    }
+    final bytes = await output.save();
+    output.dispose();
+    final directory = await _outputDirectory();
+    final result =
+        '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}_merged.pdf';
+    await File(result).writeAsBytes(bytes, flush: true);
+    await HistoryService.add(
+      HistoryItem(
+        title: 'Merged PDF',
+        type: 'pdf',
+        path: result,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return result;
   }
 
   static Future<void> share(String path) async {

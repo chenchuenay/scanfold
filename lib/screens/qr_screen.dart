@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
-enum _QrMode { scan, create }
+enum _QrMode { scan, create, gallery }
 
 class QrScreen extends StatefulWidget {
   const QrScreen({super.key});
@@ -18,9 +19,11 @@ class QrScreen extends StatefulWidget {
 class _QrScreenState extends State<QrScreen> {
   final _controller = MobileScannerController();
   final _generatorController = TextEditingController();
+  final _picker = ImagePicker();
   _QrMode? _mode;
   String? _lastValue;
   String? _lastFormat;
+  bool _galleryScanning = false;
 
   @override
   void dispose() {
@@ -47,12 +50,19 @@ class _QrScreenState extends State<QrScreen> {
       ),
       body: _mode == null
           ? _hub()
-          : (_mode == _QrMode.scan ? _scanner() : _creator()),
+          : switch (_mode!) {
+              _QrMode.scan => _scanner(),
+              _QrMode.create => _creator(),
+              _QrMode.gallery => _galleryScan(),
+            },
     );
   }
 
-  String get _modeTitle =>
-      _mode == _QrMode.scan ? 'Scan QR or Barcode' : 'Create QR Code';
+  String get _modeTitle => switch (_mode!) {
+    _QrMode.scan => 'Scan QR or Barcode',
+    _QrMode.create => 'Create QR Code',
+    _QrMode.gallery => 'Scan from Gallery',
+  };
 
   Widget _hub() {
     return ListView(
@@ -82,6 +92,14 @@ class _QrScreenState extends State<QrScreen> {
               'Turn text, a link, Wi-Fi details, or contact information into a QR.',
           onTap: () => setState(() => _mode = _QrMode.create),
           color: ScanFoldColors.amber,
+        ),
+        _option(
+          icon: Icons.photo_library_outlined,
+          title: 'Scan from gallery',
+          subtitle:
+              'Read a QR or barcode from an image already on your device.',
+          onTap: () => setState(() => _mode = _QrMode.gallery),
+          color: ScanFoldColors.mint,
         ),
       ],
     );
@@ -231,6 +249,88 @@ class _QrScreenState extends State<QrScreen> {
     );
   }
 
+  Widget _galleryScan() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Choose an image that contains a QR code or barcode. The image stays on this device.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Select an image to scan for a code.',
+                  style: TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                FilledButton.icon(
+                  onPressed: _galleryScanning ? null : _scanFromGallery,
+                  icon: _galleryScanning
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.image_outlined),
+                  label: Text(
+                    _galleryScanning ? 'Scanning...' : 'Choose image',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_lastValue != null) ...[const SizedBox(height: 16), _resultCard()],
+      ],
+    );
+  }
+
+  Future<void> _scanFromGallery() async {
+    final image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null || !mounted) return;
+    setState(() {
+      _galleryScanning = true;
+      _lastValue = null;
+      _lastFormat = null;
+    });
+    try {
+      final capture = await _controller.analyzeImage(image.path);
+      if (!mounted) return;
+      final barcode = capture?.barcodes.firstOrNull;
+      final value = barcode?.rawValue;
+      setState(() {
+        _lastValue = value;
+        _lastFormat = barcode?.format.name;
+      });
+      if (value == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No QR or barcode found in this image.'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not scan this image.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _galleryScanning = false);
+    }
+  }
+
   Widget _resultCard() {
     final value = _lastValue!;
     final uri = Uri.tryParse(value);
@@ -323,4 +423,8 @@ class _QrScreenState extends State<QrScreen> {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+}
+
+extension<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

@@ -61,4 +61,19 @@ abstract final class HistoryService {
       items.take(40).map((value) => jsonEncode(value.toJson())).toList(),
     );
   }
+
+  static Future<void> remove(String path) async {
+    final items = await load();
+    items.removeWhere((old) => old.path == path);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _key,
+      items.take(40).map((value) => jsonEncode(value.toJson())).toList(),
+    );
+  }
+
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }
