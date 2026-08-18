@@ -57,7 +57,8 @@ abstract final class FileService {
       document.addPage(
         pw.Page(
           margin: const pw.EdgeInsets.all(20),
-          build: (_) => pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
+          build: (_) =>
+              pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
         ),
       );
     }

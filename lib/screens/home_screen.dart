@@ -185,7 +185,11 @@ class _HistorySheet extends StatelessWidget {
                 color: ScanFoldColors.mint,
               ),
               title: Text(item.title),
-              subtitle: Text(item.path, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                item.path,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             );
           },
         );

@@ -31,14 +31,21 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  const Icon(Icons.picture_as_pdf_outlined, color: ScanFoldColors.mint, size: 48),
+                  const Icon(
+                    Icons.picture_as_pdf_outlined,
+                    color: ScanFoldColors.mint,
+                    size: 48,
+                  ),
                   const SizedBox(height: 14),
                   Text(
                     _images.isEmpty
                         ? 'Turn photos into a clean PDF on your device.'
                         : '${_images.length} photo${_images.length == 1 ? '' : 's'} selected',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+                    style: const TextStyle(
+                      color: ScanFoldColors.secondary,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 18),
                   FilledButton.icon(
@@ -60,7 +67,11 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
                 separatorBuilder: (_, _) => const SizedBox(width: 10),
                 itemBuilder: (_, index) => ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.file(File(_images[index].path), width: 110, fit: BoxFit.cover),
+                  child: Image.file(
+                    File(_images[index].path),
+                    width: 110,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -68,7 +79,11 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
             FilledButton.icon(
               onPressed: _working ? null : _create,
               icon: _working
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.auto_awesome_motion_outlined),
               label: Text(_working ? 'Creating...' : 'Create PDF'),
             ),
@@ -77,7 +92,10 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
             const SizedBox(height: 18),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.check_circle_outline, color: ScanFoldColors.mint),
+                leading: const Icon(
+                  Icons.check_circle_outline,
+                  color: ScanFoldColors.mint,
+                ),
                 title: const Text('PDF ready'),
                 subtitle: const Text('Created locally and ready to share.'),
                 trailing: IconButton(
@@ -101,13 +119,21 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
   Future<void> _create() async {
     setState(() => _working = true);
     try {
-      final path = await FileService.imagesToPdf(_images.map((image) => image.path).toList());
+      final path = await FileService.imagesToPdf(
+        _images.map((image) => image.path).toList(),
+      );
       if (mounted) {
         setState(() => _result = path);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('PDF created locally')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('PDF created locally')));
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not create the PDF.')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not create the PDF.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }

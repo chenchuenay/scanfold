@@ -60,7 +60,9 @@ class _QrScreenState extends State<QrScreen> {
                       if (capture.barcodes.isEmpty) return;
                       final barcode = capture.barcodes.first;
                       final value = barcode.rawValue;
-                      if (value == null || value == _lastValue || !mounted) return;
+                      if (value == null || value == _lastValue || !mounted) {
+                        return;
+                      }
                       setState(() {
                         _lastValue = value;
                         _lastFormat = barcode.format.name;
@@ -73,7 +75,10 @@ class _QrScreenState extends State<QrScreen> {
                         width: 220,
                         height: 160,
                         decoration: BoxDecoration(
-                          border: Border.all(color: ScanFoldColors.mint, width: 2),
+                          border: Border.all(
+                            color: ScanFoldColors.mint,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
@@ -87,9 +92,12 @@ class _QrScreenState extends State<QrScreen> {
           if (_lastValue != null) _resultCard(context),
           const SizedBox(height: 18),
           OutlinedButton.icon(
-            onPressed: () => setState(() => _generatorVisible = !_generatorVisible),
+            onPressed: () =>
+                setState(() => _generatorVisible = !_generatorVisible),
             icon: const Icon(Icons.qr_code_2),
-            label: Text(_generatorVisible ? 'Hide QR generator' : 'Create a QR code'),
+            label: Text(
+              _generatorVisible ? 'Hide QR generator' : 'Create a QR code',
+            ),
           ),
           if (_generatorVisible) ...[
             const SizedBox(height: 14),
@@ -135,7 +143,10 @@ class _QrScreenState extends State<QrScreen> {
               style: const TextStyle(color: ScanFoldColors.mint, fontSize: 12),
             ),
             const SizedBox(height: 8),
-            Text(value, style: const TextStyle(color: ScanFoldColors.text, height: 1.35)),
+            Text(
+              value,
+              style: const TextStyle(color: ScanFoldColors.text, height: 1.35),
+            ),
             if (isLink) ...[
               const SizedBox(height: 8),
               const Text(

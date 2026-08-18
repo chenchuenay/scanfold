@@ -16,19 +16,19 @@ class HistoryItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'type': type,
-        'path': path,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'title': title,
+    'type': type,
+    'path': path,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory HistoryItem.fromJson(Map<String, dynamic> json) => HistoryItem(
-        title: json['title'] as String? ?? 'File',
-        type: json['type'] as String? ?? 'file',
-        path: json['path'] as String? ?? '',
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+    title: json['title'] as String? ?? 'File',
+    type: json['type'] as String? ?? 'file',
+    path: json['path'] as String? ?? '',
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }
 
 abstract final class HistoryService {
@@ -40,7 +40,9 @@ abstract final class HistoryService {
     return raw
         .map((item) {
           try {
-            return HistoryItem.fromJson(jsonDecode(item) as Map<String, dynamic>);
+            return HistoryItem.fromJson(
+              jsonDecode(item) as Map<String, dynamic>,
+            );
           } catch (_) {
             return null;
           }
