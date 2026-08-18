@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import 'document_scanner_screen.dart';
 
 enum _PdfMode { create, compress, merge }
 
@@ -76,6 +77,16 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
           subtitle: 'Select one or more photos and arrange them into a PDF.',
           color: ScanFoldColors.mint,
           onTap: () => setState(() => _mode = _PdfMode.create),
+        ),
+        _option(
+          icon: Icons.document_scanner_outlined,
+          title: 'Scan a document',
+          subtitle: 'Capture pages, crop each, and combine them into a PDF.',
+          color: ScanFoldColors.mint,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DocumentScannerScreen()),
+          ),
         ),
         _option(
           icon: Icons.compress,

@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 
-enum _PhotoMode { compress, resize, scan, passport, batch }
+enum _PhotoMode { compress, resize, passport, batch }
 
 class ImageToolScreen extends StatefulWidget {
   const ImageToolScreen({super.key});
@@ -52,7 +52,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   String get _modeTitle => switch (_mode!) {
     _PhotoMode.compress => 'Compress Photo',
     _PhotoMode.resize => 'Resize Photo',
-    _PhotoMode.scan => 'Scan Document',
     _PhotoMode.passport => 'ID Photo',
     _PhotoMode.batch => 'Batch Compress',
   };
@@ -84,14 +83,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           subtitle: 'Set the exact pixel width for a form, profile, or upload.',
           color: ScanFoldColors.mint,
           mode: _PhotoMode.resize,
-        ),
-        _featureTile(
-          icon: Icons.document_scanner_outlined,
-          title: 'Scan a document',
-          subtitle:
-              'Use the camera to capture a paper document for sharing or PDF creation.',
-          color: ScanFoldColors.mint,
-          mode: _PhotoMode.scan,
         ),
         _featureTile(
           icon: Icons.badge_outlined,
@@ -172,9 +163,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
                         child: FilledButton.icon(
                           onPressed: _pickCamera,
                           icon: const Icon(Icons.camera_alt_outlined),
-                          label: Text(
-                            _mode == _PhotoMode.scan ? 'Open camera' : 'Camera',
-                          ),
+                          label: const Text('Camera'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -445,8 +434,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
       'Choose a photo, then select the largest file size it should produce.',
     _PhotoMode.resize =>
       'Choose a photo, then enter the pixel width required by the destination.',
-    _PhotoMode.scan =>
-      'Capture a document with the camera. The image stays on this device.',
     _PhotoMode.passport =>
       'Choose a portrait and prepare a practical 600 px copy for forms.',
     _PhotoMode.batch =>
@@ -457,8 +444,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     _PhotoMode.compress =>
       'Select a photo you need to send or upload under a size limit.',
     _PhotoMode.resize => 'Select a photo that needs exact dimensions.',
-    _PhotoMode.scan =>
-      'The camera is used only after you choose Scan Document.',
     _PhotoMode.passport =>
       'Choose a clear portrait. ScanFold will create a compact copy.',
     _PhotoMode.batch => 'Select the photos you want to shrink together.',
@@ -467,7 +452,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   IconData get _modeIcon => switch (_mode!) {
     _PhotoMode.compress => Icons.compress,
     _PhotoMode.resize => Icons.photo_size_select_large_outlined,
-    _PhotoMode.scan => Icons.document_scanner_outlined,
     _PhotoMode.passport => Icons.badge_outlined,
     _PhotoMode.batch => Icons.photo_library_outlined,
   };
@@ -475,7 +459,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   Color get _modeColor => switch (_mode!) {
     _PhotoMode.compress => ScanFoldColors.amber,
     _PhotoMode.resize => ScanFoldColors.mint,
-    _PhotoMode.scan => ScanFoldColors.mint,
     _PhotoMode.passport => ScanFoldColors.amber,
     _PhotoMode.batch => ScanFoldColors.mint,
   };
@@ -507,10 +490,6 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           sourcePath: _source!.path,
           targetBytes: 10 * 1024 * 1024,
           width: int.tryParse(_widthController.text.trim()),
-        ),
-        _PhotoMode.scan => await FileService.compressImageToTarget(
-          sourcePath: _source!.path,
-          targetBytes: 2 * 1024 * 1024,
         ),
         _PhotoMode.batch => null,
       };

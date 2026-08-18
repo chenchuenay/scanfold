@@ -51,7 +51,7 @@ class HomeScreen extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 0.9,
+              childAspectRatio: 0.82,
               children: [
                 ToolCard(
                   icon: Icons.qr_code_scanner_rounded,
@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                 ToolCard(
                   icon: Icons.photo_size_select_large_outlined,
                   title: 'Photo Tools',
-                  subtitle: 'Compress and resize to the right size.',
+                  subtitle: 'Compress, resize, and prepare photos.',
                   color: ScanFoldColors.amber,
                   onTap: () => Navigator.push(
                     context,
@@ -75,8 +75,8 @@ class HomeScreen extends StatelessWidget {
                 ),
                 ToolCard(
                   icon: Icons.picture_as_pdf_outlined,
-                  title: 'PDF Maker',
-                  subtitle: 'Turn photos into clean shareable PDFs.',
+                  title: 'PDF Tools',
+                  subtitle: 'Scan documents, create, compress, and merge PDFs.',
                   color: ScanFoldColors.mint,
                   onTap: () => Navigator.push(
                     context,
