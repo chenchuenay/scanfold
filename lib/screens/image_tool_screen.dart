@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/aspect_preset_picker.dart';
 import '../widgets/watermark_overlay.dart';
 
 enum _PhotoMode { compress, resize, passport, batch }
@@ -25,12 +26,12 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   List<XFile> _batchSources = const [];
   List<CompressionResult>? _batchResults;
   CompressionResult? _result;
-  CropAspectRatio _passportRatio = const CropAspectRatio(
-    ratioX: 35,
-    ratioY: 45,
-  );
+  AspectPreset _resizeAspect = resizePresets.first;
+  int _selectedPassportIndex = 0;
   int _targetBytes = 500 * 1024;
   bool _working = false;
+
+  AspectPreset get _selectedPassport => passportPresets[_selectedPassportIndex];
 
   @override
   void dispose() {
@@ -146,24 +147,40 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           style: const TextStyle(color: ScanFoldColors.secondary, height: 1.4),
         ),
         const SizedBox(height: 18),
-        if (_mode == _PhotoMode.compress || _mode == _PhotoMode.passport)
+        if (_mode == _PhotoMode.compress)
           _sizeControls()
         else if (_mode == _PhotoMode.resize)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _widthController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Width in pixels',
-                  hintText: 'Example: 1200',
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Choose a size',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Pick the shape for your photo. Extra space is filled with a soft blurred background.',
+                    style: TextStyle(
+                      color: ScanFoldColors.secondary,
+                      fontSize: 12,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AspectPresetPicker(
+                    presets: resizePresets,
+                    selected: _resizeAspect,
+                    onSelected: (preset) =>
+                        setState(() => _resizeAspect = preset),
+                  ),
+                ],
               ),
             ),
-          ),
-        if (_mode == _PhotoMode.passport) ...[
-          const SizedBox(height: 10),
+          )
+        else if (_mode == _PhotoMode.passport)
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -174,50 +191,20 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
                     'Photo size',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('35×45'),
-                        selected: _passportRatio.ratioX == 35,
-                        onSelected: (_) => setState(
-                          () => _passportRatio = const CropAspectRatio(
-                            ratioX: 35,
-                            ratioY: 45,
-                          ),
-                        ),
+                  const SizedBox(height: 12),
+                  AspectPresetPicker(
+                    presets: passportPresets,
+                    selected: _selectedPassport,
+                    onSelected: (preset) => setState(
+                      () => _selectedPassportIndex = passportPresets.indexOf(
+                        preset,
                       ),
-                      ChoiceChip(
-                        label: const Text('2×2 in'),
-                        selected:
-                            _passportRatio.ratioX == 1 &&
-                            _passportRatio.ratioY == 1,
-                        onSelected: (_) => setState(
-                          () => _passportRatio = const CropAspectRatio(
-                            ratioX: 1,
-                            ratioY: 1,
-                          ),
-                        ),
-                      ),
-                      ChoiceChip(
-                        label: const Text('33×48'),
-                        selected: _passportRatio.ratioX == 33,
-                        onSelected: (_) => setState(
-                          () => _passportRatio = const CropAspectRatio(
-                            ratioX: 33,
-                            ratioY: 48,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
         const SizedBox(height: 12),
         if (!hasSource)
           Card(
@@ -275,7 +262,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
             OutlinedButton.icon(
               onPressed: _working ? null : _cropPassport,
               icon: const Icon(Icons.crop),
-              label: const Text('Crop to selected size'),
+              label: const Text('Crop within the photo'),
             ),
             const SizedBox(height: 8),
           ],
@@ -553,7 +540,7 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   Future<void> _cropPassport() async {
     final cropped = await ImageCropper().cropImage(
       sourcePath: _source!.path,
-      aspectRatio: _passportRatio,
+      aspectRatio: _selectedPassport.ratio,
       compressQuality: 95,
       uiSettings: [
         AndroidUiSettings(
@@ -582,13 +569,12 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
         ),
         _PhotoMode.passport => await FileService.compressImageToTarget(
           sourcePath: _source!.path,
-          targetBytes: 300 * 1024,
-          width: 600,
+          targetBytes: 1024 * 1024,
         ),
-        _PhotoMode.resize => await FileService.compressImageToTarget(
+        _PhotoMode.resize => await FileService.resizeToAspectWithBlurFill(
           sourcePath: _source!.path,
-          targetBytes: 10 * 1024 * 1024,
-          width: int.tryParse(_widthController.text.trim()),
+          ratioX: _resizeAspect.ratio.ratioX.toInt(),
+          ratioY: _resizeAspect.ratio.ratioY.toInt(),
         ),
         _PhotoMode.batch => null,
       };

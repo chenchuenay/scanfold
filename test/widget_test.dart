@@ -65,6 +65,44 @@ void main() {
     expect(find.text('Split a PDF'), findsOneWidget);
   });
 
+  testWidgets('Resize shows aspect presets with references before uploading',
+      (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.tap(find.text('Photo Tools'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Resize dimensions'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Resize dimensions'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Square · 1:1'), findsOneWidget);
+    expect(find.text('WhatsApp & Instagram profile, avatars'), findsOneWidget);
+    expect(find.text('Story · 9:16'), findsOneWidget);
+  });
+
+  testWidgets('ID photo shows size presets with references before uploading',
+      (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.tap(find.text('Photo Tools'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('ID and passport photo'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ID and passport photo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('35×45 mm'), findsOneWidget);
+    expect(find.text('Passport (EU, India)'), findsOneWidget);
+    expect(find.text('2×2 inch'), findsOneWidget);
+  });
+
   testWidgets('Home screen shows Zip Files tile', (tester) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.scrollUntilVisible(
@@ -76,8 +114,9 @@ void main() {
     expect(find.text('Zip Files'), findsOneWidget);
   });
 
-  testWidgets('Photo compress shows size preferences before uploading',
-      (tester) async {
+  testWidgets('Photo compress shows size preferences before uploading', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.tap(find.text('Photo Tools'));
     await tester.pumpAndSettle();
@@ -89,8 +128,9 @@ void main() {
     expect(find.text('1 MB'), findsOneWidget);
   });
 
-  testWidgets('Document scanner shows password before capturing',
-      (tester) async {
+  testWidgets('Document scanner shows password before capturing', (
+    tester,
+  ) async {
     await tester.pumpWidget(const ScanFoldApp());
     await tester.scrollUntilVisible(
       find.text('PDF Tools'),

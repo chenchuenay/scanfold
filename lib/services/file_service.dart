@@ -4,6 +4,7 @@ import 'dart:ui' show Offset;
 
 import 'package:archive/archive.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
@@ -80,6 +81,97 @@ abstract final class FileService {
       } catch (_) {}
     }
     return results;
+  }
+
+  /// Fits [sourcePath] to [ratioX]:[ratioY] with a blurred fill so no part of
+  /// the original is cropped. The output is a JPG with dimensions at most
+  /// [maxWidth] x [maxHeight].
+  static Future<CompressionResult?> resizeToAspectWithBlurFill({
+    required String sourcePath,
+    required int ratioX,
+    required int ratioY,
+    int maxWidth = 2000,
+    int maxHeight = 2000,
+  }) async {
+    final originalBytes = await File(sourcePath).readAsBytes();
+    final decoded = img.decodeImage(originalBytes);
+    if (decoded == null) return null;
+
+    final sw = decoded.width;
+    final sh = decoded.height;
+    final targetRatio = ratioX / ratioY;
+    final sourceRatio = sw / sh;
+
+    // Base the output by fit-height then apply aspect; scale maxWidth/maxHeight.
+    int outW, outH;
+    if (sourceRatio > targetRatio) {
+      outH = maxHeight;
+      outW = (maxHeight * targetRatio).round();
+    } else {
+      outW = maxWidth;
+      outH = (maxWidth / targetRatio).round();
+    }
+    if (outW > maxWidth) {
+      outW = maxWidth;
+      outH = (maxWidth / targetRatio).round();
+    }
+    if (outH > maxHeight) {
+      outH = maxHeight;
+      outW = (maxHeight * targetRatio).round();
+    }
+
+    final canvas = img.Image(width: outW, height: outH);
+
+    // Background: scale the source to cover the full canvas, then blur.
+    final bg = img.copyResizeCropSquare(
+      decoded,
+      size: outW > outH ? outH : outW,
+    );
+    final bgResized = img.copyResize(
+      bg,
+      width: outW,
+      height: outH,
+      interpolation: img.Interpolation.cubic,
+    );
+    img.compositeImage(canvas, bgResized);
+    img.gaussianBlur(canvas, radius: 8);
+
+    // Foreground: keep the sharp source fully visible, fit within canvas.
+    final scale = (outW / sw) < (outH / sh) ? (outW / sw) : (outH / sh);
+    final fw = (sw * scale).round();
+    final fh = (sh * scale).round();
+    final fg = img.copyResize(
+      decoded,
+      width: fw,
+      height: fh,
+      interpolation: img.Interpolation.cubic,
+    );
+    img.compositeImage(
+      canvas,
+      fg,
+      dstX: ((outW - fw) / 2).round(),
+      dstY: ((outH - fh) / 2).round(),
+    );
+
+    final bytes = img.encodeJpg(canvas, quality: 90);
+    final directory = await _outputDirectory();
+    final output =
+        '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    await File(output).writeAsBytes(bytes, flush: true);
+    await HistoryService.add(
+      HistoryItem(
+        title: 'Resized photo',
+        type: 'image',
+        path: output,
+        createdAt: DateTime.now(),
+      ),
+    );
+    return CompressionResult(
+      path: output,
+      bytes: bytes.length,
+      quality: 90,
+      reachedTarget: true,
+    );
   }
 
   static Future<String> imagesToPdf(
