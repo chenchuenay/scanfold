@@ -21,13 +21,18 @@ abstract final class FileService {
     int quality = 82,
     int? width,
   }) async {
-    final bytes = await FlutterImageCompress.compressWithFile(
-      sourcePath,
-      quality: quality,
-      minWidth: width ?? 1,
-      minHeight: 1,
-      format: CompressFormat.jpeg,
-    );
+    final bytes = width == null
+        ? await FlutterImageCompress.compressWithFile(
+            sourcePath,
+            quality: quality,
+            format: CompressFormat.jpeg,
+          )
+        : await FlutterImageCompress.compressWithFile(
+            sourcePath,
+            quality: quality,
+            minWidth: width,
+            format: CompressFormat.jpeg,
+          );
     if (bytes == null) return null;
     final directory = await _outputDirectory();
     final output =

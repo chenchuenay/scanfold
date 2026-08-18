@@ -15,10 +15,17 @@ class ImageToolScreen extends StatefulWidget {
 
 class _ImageToolScreenState extends State<ImageToolScreen> {
   final _picker = ImagePicker();
+  final _widthController = TextEditingController();
   XFile? _source;
   String? _result;
   double _quality = 82;
   bool _working = false;
+
+  @override
+  void dispose() {
+    _widthController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +67,15 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
                     const Text(
                       'Higher quality keeps more detail but creates a larger file.',
                       style: TextStyle(color: ScanFoldColors.secondary, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _widthController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Width in pixels (optional)',
+                        hintText: 'Example: 1200',
+                      ),
                     ),
                   ],
                 ),
@@ -116,7 +132,25 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
               style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
             ),
             const SizedBox(height: 18),
-            FilledButton.icon(onPressed: _pick, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('Choose photo')),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: _pickCamera,
+                    icon: const Icon(Icons.document_scanner_outlined),
+                    label: const Text('Scan'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pick,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('Gallery'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -128,12 +162,18 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
     if (source != null && mounted) setState(() => _source = source);
   }
 
+  Future<void> _pickCamera() async {
+    final source = await _picker.pickImage(source: ImageSource.camera);
+    if (source != null && mounted) setState(() => _source = source);
+  }
+
   Future<void> _compress() async {
     setState(() => _working = true);
     try {
       final result = await FileService.compressImage(
         sourcePath: _source!.path,
         quality: _quality.round(),
+        width: int.tryParse(_widthController.text.trim()),
       );
       if (mounted) {
         setState(() => _result = result);
