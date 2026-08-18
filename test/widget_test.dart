@@ -39,7 +39,7 @@ void main() {
     expect(find.text('Create a QR code'), findsOneWidget);
   });
 
-  testWidgets('PDF hub lists create, scan, compress, and merge options', (
+  testWidgets('PDF hub lists create, scan, compress, merge, and split', (
     tester,
   ) async {
     await tester.pumpWidget(const ScanFoldApp());
@@ -56,5 +56,23 @@ void main() {
     expect(find.text('Scan a document'), findsOneWidget);
     expect(find.text('Compress a PDF'), findsOneWidget);
     expect(find.text('Merge PDFs'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Split a PDF'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Split a PDF'), findsOneWidget);
+  });
+
+  testWidgets('Home screen shows Zip Files tile', (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.scrollUntilVisible(
+      find.text('Zip Files'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Zip Files'), findsOneWidget);
   });
 }

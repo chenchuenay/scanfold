@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/file_service.dart';
@@ -24,6 +25,10 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   List<XFile> _batchSources = const [];
   List<CompressionResult>? _batchResults;
   CompressionResult? _result;
+  CropAspectRatio _passportRatio = const CropAspectRatio(
+    ratioX: 35,
+    ratioY: 45,
+  );
   int _targetBytes = 500 * 1024;
   bool _working = false;
 
@@ -210,6 +215,51 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
             ),
           ),
           const SizedBox(height: 14),
+          if (_mode == _PhotoMode.passport) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('35×45'),
+                  selected: _passportRatio.ratioX == 35,
+                  onSelected: (_) => setState(
+                    () => _passportRatio = const CropAspectRatio(
+                      ratioX: 35,
+                      ratioY: 45,
+                    ),
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('2×2 in'),
+                  selected:
+                      _passportRatio.ratioX == 1 && _passportRatio.ratioY == 1,
+                  onSelected: (_) => setState(
+                    () => _passportRatio = const CropAspectRatio(
+                      ratioX: 1,
+                      ratioY: 1,
+                    ),
+                  ),
+                ),
+                ChoiceChip(
+                  label: const Text('33×48'),
+                  selected: _passportRatio.ratioX == 33,
+                  onSelected: (_) => setState(
+                    () => _passportRatio = const CropAspectRatio(
+                      ratioX: 33,
+                      ratioY: 48,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: _working ? null : _cropPassport,
+              icon: const Icon(Icons.crop),
+              label: const Text('Crop to photo'),
+            ),
+          ],
           FilledButton.icon(
             onPressed: _working ? null : _prepare,
             icon: _working
@@ -479,6 +529,28 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
   Future<void> _pickCamera() async {
     final source = await _picker.pickImage(source: ImageSource.camera);
     if (source != null && mounted) setState(() => _source = source);
+  }
+
+  Future<void> _cropPassport() async {
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: _source!.path,
+      aspectRatio: _passportRatio,
+      compressQuality: 95,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop photo',
+          backgroundColor: ScanFoldColors.background,
+          activeControlsWidgetColor: ScanFoldColors.mint,
+        ),
+        IOSUiSettings(title: 'Crop photo'),
+      ],
+    );
+    if (cropped == null || !mounted) return;
+    final file = File(cropped.path);
+    setState(() {
+      _source = XFile(file.path);
+      _result = null;
+    });
   }
 
   Future<void> _prepare() async {

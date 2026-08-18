@@ -9,7 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/watermark_overlay.dart';
 import 'document_scanner_screen.dart';
 
-enum _PdfMode { create, compress, merge }
+enum _PdfMode { create, compress, merge, split }
 
 class PdfToolScreen extends StatefulWidget {
   const PdfToolScreen({super.key});
@@ -49,6 +49,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
               _PdfMode.create => _create(),
               _PdfMode.compress => _compress(),
               _PdfMode.merge => _merge(),
+              _PdfMode.split => _split(),
             },
     );
   }
@@ -57,6 +58,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     _PdfMode.create => 'Create PDF',
     _PdfMode.compress => 'Compress PDF',
     _PdfMode.merge => 'Merge PDFs',
+    _PdfMode.split => 'Split a PDF',
   };
 
   Widget _hub() {
@@ -103,6 +105,13 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
           subtitle: 'Combine several PDF files into one document.',
           color: ScanFoldColors.mint,
           onTap: () => setState(() => _mode = _PdfMode.merge),
+        ),
+        _option(
+          icon: Icons.call_split_outlined,
+          title: 'Split a PDF',
+          subtitle: 'Separate a multi-page PDF into one file per page.',
+          color: ScanFoldColors.amber,
+          onTap: () => setState(() => _mode = _PdfMode.split),
         ),
       ],
     );
@@ -419,38 +428,55 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
         ),
         if (_mergePaths.isNotEmpty) ...[
           const SizedBox(height: 14),
-          Card(
-            child: Column(
-              children: [
-                for (var i = 0; i < _mergePaths.length; i++)
-                  ListTile(
-                    dense: true,
-                    leading: Text(
-                      '${i + 1}',
-                      style: const TextStyle(
-                        color: ScanFoldColors.muted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    title: Text(
-                      _mergePaths[i].split('/').last,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'Remove',
-                      onPressed: () => setState(() {
-                        _mergePaths = List.of(_mergePaths)..removeAt(i);
-                        _result = null;
-                      }),
-                      icon: const Icon(
-                        Icons.close,
-                        color: ScanFoldColors.secondary,
-                        size: 18,
-                      ),
-                    ),
+          const Text(
+            'PDFs in order (drag to reorder)',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: _mergePaths.length,
+            onReorderItem: (oldIndex, newIndex) {
+              setState(() {
+                final item = _mergePaths.removeAt(oldIndex);
+                _mergePaths.insert(newIndex, item);
+                _result = null;
+              });
+            },
+            itemBuilder: (context, index) => Card(
+              key: ValueKey('${_mergePaths[index]}_$index'),
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                dense: true,
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: const Icon(
+                    Icons.drag_handle,
+                    color: ScanFoldColors.muted,
+                    size: 20,
                   ),
-              ],
+                ),
+                title: Text(
+                  '${index + 1}. ${_mergePaths[index].split('/').last}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                trailing: IconButton(
+                  tooltip: 'Remove',
+                  onPressed: () => setState(() {
+                    _mergePaths = List.of(_mergePaths)..removeAt(index);
+                    _result = null;
+                  }),
+                  icon: const Icon(
+                    Icons.close,
+                    color: ScanFoldColors.secondary,
+                    size: 18,
+                  ),
+                ),
+              ),
             ),
           ),
           if (_mergePaths.length >= 2) ...[
@@ -508,6 +534,123 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
     }
   }
 
+  Widget _split() {
+    return ListView(
+      padding: const EdgeInsets.all(18),
+      children: [
+        const Text(
+          'Choose a multi-page PDF. ScanFold will create one separate PDF per page.',
+          style: TextStyle(color: ScanFoldColors.secondary, height: 1.4),
+        ),
+        const SizedBox(height: 18),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.call_split_outlined,
+                  color: ScanFoldColors.amber,
+                  size: 48,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  _pdfPath == null
+                      ? 'No PDF selected'
+                      : 'Selected PDF: ${_formatBytes(_beforeBytes ?? 0)}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: ScanFoldColors.secondary),
+                ),
+                const SizedBox(height: 18),
+                OutlinedButton.icon(
+                  onPressed: _working ? null : _pickSplitPdf,
+                  icon: const Icon(Icons.folder_open_outlined),
+                  label: const Text('Choose PDF'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_pdfPath != null) ...[
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            onPressed: _working ? null : _splitPdf,
+            icon: _working
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.call_split_outlined),
+            label: Text(_working ? 'Splitting locally...' : 'Split into pages'),
+          ),
+        ],
+        if (_splitResults != null && _splitResults!.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          const Text(
+            'Separate pages',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 10),
+          ..._splitResults!.asMap().entries.map(
+            (entry) => Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                dense: true,
+                leading: const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  color: ScanFoldColors.mint,
+                  size: 20,
+                ),
+                title: Text(
+                  'Page ${entry.key + 1}',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                trailing: IconButton(
+                  tooltip: 'Share',
+                  onPressed: () => FileService.share(entry.value),
+                  icon: const Icon(Icons.ios_share, size: 20),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<String>? _splitResults;
+
+  Future<void> _pickSplitPdf() async {
+    final result = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    final path = result?.path;
+    if (path != null && mounted) {
+      setState(() {
+        _pdfPath = path;
+        _beforeBytes = File(path).lengthSync();
+        _splitResults = null;
+      });
+    }
+  }
+
+  Future<void> _splitPdf() async {
+    setState(() => _working = true);
+    try {
+      final results = await FileService.splitPdfIntoOnePerPage(_pdfPath!);
+      if (mounted) {
+        setState(() => _splitResults = results);
+        _success('PDF split into ${results.length} pages');
+      }
+    } catch (_) {
+      _failure('Could not split this PDF.');
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   void _success(String message) {
     ScaffoldMessenger.of(
       context,
@@ -532,6 +675,7 @@ class _PdfToolScreenState extends State<PdfToolScreen> {
       _result = null;
       _beforeBytes = null;
       _afterBytes = null;
+      _splitResults = null;
     });
   }
 

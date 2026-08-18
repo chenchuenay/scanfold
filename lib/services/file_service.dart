@@ -124,6 +124,39 @@ abstract final class FileService {
     return output;
   }
 
+  static Future<List<String>> splitPdfIntoOnePerPage(String inputPath) async {
+    final input = sf.PdfDocument(
+      inputBytes: await File(inputPath).readAsBytes(),
+    );
+    final directory = await _outputDirectory();
+    final results = <String>[];
+    for (var i = 0; i < input.pages.count; i++) {
+      final output = sf.PdfDocument();
+      output.pages.add().graphics.drawPdfTemplate(
+        input.pages[i].createTemplate(),
+        const Offset(0, 0),
+      );
+      final bytes = await output.save();
+      output.dispose();
+      final result =
+          '${directory.path}/scan_${DateTime.now().millisecondsSinceEpoch}_page${i + 1}.pdf';
+      await File(result).writeAsBytes(bytes, flush: true);
+      results.add(result);
+    }
+    input.dispose();
+    if (results.isNotEmpty) {
+      await HistoryService.add(
+        HistoryItem(
+          title: 'Split PDF (${results.length} pages)',
+          type: 'pdf',
+          path: results.first,
+          createdAt: DateTime.now(),
+        ),
+      );
+    }
+    return results;
+  }
+
   static Future<String> createZip(List<String> paths) async {
     final archive = Archive();
     for (final path in paths) {
