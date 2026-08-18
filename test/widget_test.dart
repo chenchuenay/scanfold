@@ -75,4 +75,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Zip Files'), findsOneWidget);
   });
+
+  testWidgets('Photo compress shows size preferences before uploading',
+      (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.tap(find.text('Photo Tools'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Compress to a size'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maximum file size'), findsOneWidget);
+    expect(find.text('500 KB'), findsOneWidget);
+    expect(find.text('1 MB'), findsOneWidget);
+  });
+
+  testWidgets('Document scanner shows password before capturing',
+      (tester) async {
+    await tester.pumpWidget(const ScanFoldApp());
+    await tester.scrollUntilVisible(
+      find.text('PDF Tools'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('PDF Tools'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Scan a document'),
+      120,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Scan a document'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Password (optional)'), findsOneWidget);
+  });
 }

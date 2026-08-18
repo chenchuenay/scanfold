@@ -162,6 +162,62 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
               ),
             ),
           ),
+        if (_mode == _PhotoMode.passport) ...[
+          const SizedBox(height: 10),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Photo size',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text('35×45'),
+                        selected: _passportRatio.ratioX == 35,
+                        onSelected: (_) => setState(
+                          () => _passportRatio = const CropAspectRatio(
+                            ratioX: 35,
+                            ratioY: 45,
+                          ),
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: const Text('2×2 in'),
+                        selected:
+                            _passportRatio.ratioX == 1 &&
+                            _passportRatio.ratioY == 1,
+                        onSelected: (_) => setState(
+                          () => _passportRatio = const CropAspectRatio(
+                            ratioX: 1,
+                            ratioY: 1,
+                          ),
+                        ),
+                      ),
+                      ChoiceChip(
+                        label: const Text('33×48'),
+                        selected: _passportRatio.ratioX == 33,
+                        onSelected: (_) => setState(
+                          () => _passportRatio = const CropAspectRatio(
+                            ratioX: 33,
+                            ratioY: 48,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         if (!hasSource)
           Card(
@@ -216,49 +272,12 @@ class _ImageToolScreenState extends State<ImageToolScreen> {
           ),
           const SizedBox(height: 14),
           if (_mode == _PhotoMode.passport) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                ChoiceChip(
-                  label: const Text('35×45'),
-                  selected: _passportRatio.ratioX == 35,
-                  onSelected: (_) => setState(
-                    () => _passportRatio = const CropAspectRatio(
-                      ratioX: 35,
-                      ratioY: 45,
-                    ),
-                  ),
-                ),
-                ChoiceChip(
-                  label: const Text('2×2 in'),
-                  selected:
-                      _passportRatio.ratioX == 1 && _passportRatio.ratioY == 1,
-                  onSelected: (_) => setState(
-                    () => _passportRatio = const CropAspectRatio(
-                      ratioX: 1,
-                      ratioY: 1,
-                    ),
-                  ),
-                ),
-                ChoiceChip(
-                  label: const Text('33×48'),
-                  selected: _passportRatio.ratioX == 33,
-                  onSelected: (_) => setState(
-                    () => _passportRatio = const CropAspectRatio(
-                      ratioX: 33,
-                      ratioY: 48,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: _working ? null : _cropPassport,
               icon: const Icon(Icons.crop),
-              label: const Text('Crop to photo'),
+              label: const Text('Crop to selected size'),
             ),
+            const SizedBox(height: 8),
           ],
           FilledButton.icon(
             onPressed: _working ? null : _prepare,
