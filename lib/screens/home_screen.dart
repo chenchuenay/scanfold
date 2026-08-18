@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/history_service.dart';
-import '../services/pro_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/tool_card.dart';
 import 'image_tool_screen.dart';
 import 'pdf_tool_screen.dart';
-import 'pro_screen.dart';
 import 'qr_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -47,25 +45,6 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(color: ScanFoldColors.secondary, fontSize: 15),
             ),
             const SizedBox(height: 24),
-            if (!ProService.instance.isPro)
-              Card(
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.auto_awesome,
-                    color: ScanFoldColors.amber,
-                  ),
-                  title: const Text('ScanFold Pro'),
-                  subtitle: const Text(
-                    'Remove ads and unlock unlimited batch tools.',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ProScreen()),
-                  ),
-                ),
-              ),
-            if (!ProService.instance.isPro) const SizedBox(height: 12),
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
