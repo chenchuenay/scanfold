@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'services/pro_service.dart';
 import 'screens/home_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  unawaited(ProService.instance.initialize());
   runApp(const ScanFoldApp());
 }
 

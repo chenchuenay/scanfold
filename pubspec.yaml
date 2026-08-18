@@ -43,6 +43,7 @@ dependencies:
   pdf: ^3.13.0
   shared_preferences: ^2.5.5
   unity_levelplay_mediation: ^9.2.0
+  in_app_purchase: ^3.3.0
 
 dev_dependencies:
   flutter_test:
