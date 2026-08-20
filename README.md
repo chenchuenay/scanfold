@@ -1,6 +1,13 @@
-# ScanFold
+<p align="center">
+  <img src="images/logo_SF.png" alt="ScanFold Logo" width="120" />
+</p>
 
-Privacy-first document toolkit for Android. All processing happens on your device — no uploads, no account required.
+<h1 align="center">ScanFold</h1>
+
+<p align="center">
+  Privacy-first document toolkit for Android.<br/>
+  All processing happens on your device — no uploads, no account required.
+</p>
 
 ## About
 
