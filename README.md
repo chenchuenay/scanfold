@@ -1,33 +1,21 @@
 # ScanFold
 
-ScanFold is a private, offline-first toolkit for scanning, preparing, and
-sharing QR codes, documents, photos, and PDFs.
+Privacy-first document toolkit for Android. All processing happens on your device — no uploads, no account required.
 
-## Identity
+## About
 
-- Product: ScanFold
-- Firebase project: `scanfold1`
-- Android application ID: `com.enaykumar.scanfold`
-- Creator: Enay Works
+ScanFold is an all-in-one offline toolkit for scanning, preparing, and sharing documents, photos, and QR codes. Built with privacy as the default — your files never leave your phone.
 
-## Principles
+**Tools include:**
+- QR & Barcode Scanner
+- Photo Compress, Resize & ID Photo
+- PDF Scan, Create, Edit, Merge & Unlock
+- ZIP Pack & Unlock
+- Excel Photo-to-Sheet & CSV Convert
 
-- Core tools work without an account or network connection.
-- Photos and documents stay on the device unless the user explicitly shares them.
-- Ads never interrupt scanning or editing.
-- Pro removes visible advertising.
-- User-facing errors explain the recovery action without exposing technical details.
+## Ownership
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Product:** ScanFold
+- **Author:** Enay Kumar
+- **Platform:** Android (Flutter)
+- **Copyright:** © 2026 Enay Kumar. All rights reserved.
